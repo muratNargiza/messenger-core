@@ -40,8 +40,10 @@ func main() {
 	repo := postgres.NewPostgresRepository(dbpool)
 	authUseCase := usecase.NewAuthUseCase(repo, cfg.JWTSecret, cfg.JWTTTL)
 
-	h := server.Default(server.WithHostPorts(addr))
-	server.WithHandleMethodNotAllowed(true)
+	h := server.Default(
+		server.WithHostPorts(addr),
+		server.WithHandleMethodNotAllowed(true),
+	)
 
 	http.SetupRouter(h, authUseCase, cfg.JWTSecret)
 

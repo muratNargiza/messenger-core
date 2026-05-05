@@ -24,7 +24,7 @@ func GetConfig() *Config {
 		instance = &Config{}
 		if err := cleanenv.ReadConfig(".env", instance); err != nil {
 			if envErr := cleanenv.ReadEnv(instance); envErr != nil {
-				hlog.Error("config error: ", envErr)
+				hlog.Fatalf("config error: %v", envErr)
 			}
 		}
 	})
