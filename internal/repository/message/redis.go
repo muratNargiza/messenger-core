@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/redis/go-redis/v9"
 )
@@ -28,7 +28,7 @@ func (r *RedisCache) CacheMessage(ctx context.Context, msg *entity.Message) {
 	cacheKey := fmt.Sprintf("chat:%s:cache", msg.ChatID)
 	data, err := json.Marshal(msg)
 	if err != nil {
-		hlog.CtxErrorf(ctx, "redis marshal message failed: %v", err)
+		logger.CtxErrorf(ctx, "redis marshal message failed: %v", err)
 		return
 	}
 
@@ -38,9 +38,9 @@ func (r *RedisCache) CacheMessage(ctx context.Context, msg *entity.Message) {
 	pipe.Expire(ctx, cacheKey, cacheTTL)
 
 	if _, err := pipe.Exec(ctx); err != nil {
-		hlog.CtxErrorf(ctx, "redis cache message failed for chat %s: %v", msg.ChatID, err)
+		logger.CtxErrorf(ctx, "redis cache message failed for chat %s: %v", msg.ChatID, err)
 	} else {
-		hlog.CtxInfof(ctx, "redis cached message %s for chat %s", msg.MessageID, msg.ChatID)
+		logger.CtxInfof(ctx, "redis cached message %s for chat %s", msg.MessageID, msg.ChatID)
 	}
 }
 
@@ -59,7 +59,7 @@ func (r *RedisCache) GetCachedHistory(ctx context.Context, chatID string, limit 
 		}
 	}
 
-	hlog.CtxInfof(ctx, "redis returned %d cached messages for chat %s", len(messages), chatID)
+	logger.CtxInfof(ctx, "redis returned %d cached messages for chat %s", len(messages), chatID)
 	return messages, true
 }
 
@@ -81,9 +81,9 @@ func (r *RedisCache) WarmUpCache(ctx context.Context, chatID string, messages []
 
 	pipe.Expire(ctx, cacheKey, cacheTTL)
 	if _, err := pipe.Exec(ctx); err != nil {
-		hlog.CtxErrorf(ctx, "redis warmup cache failed for chat %s: %v", chatID, err)
+		logger.CtxErrorf(ctx, "redis warmup cache failed for chat %s: %v", chatID, err)
 	} else {
-		hlog.CtxInfof(ctx, "redis warmed up cache with %d messages for chat %s", len(messages), chatID)
+		logger.CtxInfof(ctx, "redis warmed up cache with %d messages for chat %s", len(messages), chatID)
 	}
 }
 
@@ -91,14 +91,14 @@ func (r *RedisCache) Publish(ctx context.Context, msg *entity.Message) {
 	pubsubKey := fmt.Sprintf("chat:%s:pubsub", msg.ChatID)
 	data, err := json.Marshal(msg)
 	if err != nil {
-		hlog.CtxErrorf(ctx, "redis marshal pubsub message failed: %v", err)
+		logger.CtxErrorf(ctx, "redis marshal pubsub message failed: %v", err)
 		return
 	}
 
 	if err := r.client.Publish(ctx, pubsubKey, data).Err(); err != nil {
-		hlog.CtxErrorf(ctx, "redis publish failed for chat %s: %v", msg.ChatID, err)
+		logger.CtxErrorf(ctx, "redis publish failed for chat %s: %v", msg.ChatID, err)
 	} else {
-		hlog.CtxInfof(ctx, "redis published message %s for chat %s", msg.MessageID, msg.ChatID)
+		logger.CtxInfof(ctx, "redis published message %s for chat %s", msg.MessageID, msg.ChatID)
 	}
 }
 
@@ -124,13 +124,13 @@ func (r *RedisCache) Subscribe(ctx context.Context, chatID string) (<-chan *enti
 					select {
 					case msgCh <- &msg:
 					default:
-						hlog.CtxWarnf(ctx, "redis pubsub channel full, dropped message for chat %s", chatID)
+						logger.CtxWarnf(ctx, "redis pubsub channel full, dropped message for chat %s", chatID)
 					}
 				}
 			}
 		}
 	}()
 
-	hlog.CtxInfof(ctx, "redis subscribed to chat %s", chatID)
+	logger.CtxInfof(ctx, "redis subscribed to chat %s", chatID)
 	return msgCh, pubsub.Close, nil
 }

@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/gliedabrennung/messenger-core/internal/config"
@@ -22,7 +23,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatalf("startup failed: %v", err)
+		logger.Fatalf("startup failed: %v", err)
 	}
 }
 
@@ -42,7 +43,7 @@ func run() error {
 
 	var scyllaSession *gocql.Session
 	if err := message.InitSchema(ctx, cfg.ScyllaHosts, cfg.ScyllaKeyspace); err != nil {
-		log.Printf("warning: could not initialize scylla schema (skipping messages feature): %v", err)
+		logger.Warnf("warning: could not initialize scylla schema (skipping messages feature): %v", err)
 	} else {
 		cluster := gocql.NewCluster(cfg.ScyllaHosts...)
 		cluster.Keyspace = cfg.ScyllaKeyspace
@@ -50,7 +51,7 @@ func run() error {
 		var err error
 		scyllaSession, err = cluster.CreateSession()
 		if err != nil {
-			log.Printf("warning: could not connect to scylla (skipping messages feature): %v", err)
+			logger.Warnf("warning: could not connect to scylla (skipping messages feature): %v", err)
 			scyllaSession = nil
 		} else {
 			defer scyllaSession.Close()
@@ -62,7 +63,7 @@ func run() error {
 		Password: cfg.RedisPassword,
 	})
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Printf("warning: could not connect to redis (skipping cache/pubsub): %v", err)
+		logger.Warnf("warning: could not connect to redis (skipping cache/pubsub): %v", err)
 		rdb = nil
 	} else {
 		defer rdb.Close()

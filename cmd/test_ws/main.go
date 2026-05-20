@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"net/url"
 	"os"
 	"strings"
@@ -26,16 +27,16 @@ func req(baseURL, path string, payload map[string]any) *userResponse {
 	b, _ := json.Marshal(payload)
 	resp, err := http.Post(baseURL+path, "application/json", bytes.NewReader(b))
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
-		log.Fatalf("error %s: %s", path, body)
+		logger.Fatalf("error %s: %s", path, body)
 	}
 	var out userResponse
 	if err := json.Unmarshal(body, &out); err != nil {
-		log.Fatalf("unmarshal %s: %v", path, err)
+		logger.Fatalf("unmarshal %s: %v", path, err)
 	}
 	return &out
 }
@@ -63,14 +64,14 @@ func main() {
 	wsURL.RawQuery = "token=" + r1.Token
 	c1, _, err := websocket.DefaultDialer.Dial(wsURL.String(), nil)
 	if err != nil {
-		log.Fatal("dial c1:", err)
+		logger.Fatal("dial c1:", err)
 	}
 	defer c1.Close()
 
 	wsURL.RawQuery = "token=" + r2.Token
 	c2, _, err := websocket.DefaultDialer.Dial(wsURL.String(), nil)
 	if err != nil {
-		log.Fatal("dial c2:", err)
+		logger.Fatal("dial c2:", err)
 	}
 	defer c2.Close()
 
@@ -81,15 +82,15 @@ func main() {
 		"message": "hello from 1",
 	}
 	if err := c1.WriteJSON(msg); err != nil {
-		log.Fatal("write:", err)
+		logger.Fatal("write:", err)
 	}
 
 	if err := c2.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
-		log.Fatal("set read deadline:", err)
+		logger.Fatal("set read deadline:", err)
 	}
 	_, p, err := c2.ReadMessage()
 	if err != nil {
-		log.Fatal("read c2:", err)
+		logger.Fatal("read c2:", err)
 	}
 	fmt.Printf("User 2 received: %s\n", p)
 }

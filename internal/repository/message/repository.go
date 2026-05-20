@@ -3,7 +3,7 @@ package message
 import (
 	"context"
 
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/gocql/gocql"
 	"github.com/redis/go-redis/v9"
@@ -57,6 +57,6 @@ func (r *Repository) GetChatHistory(ctx context.Context, chatID string, limit in
 }
 
 func (r *Repository) Subscribe(ctx context.Context, chatID string) (<-chan *entity.Message, func() error, error) {
-	hlog.CtxInfof(ctx, "subscribing to chat %s", chatID)
+	logger.CtxInfof(ctx, "subscribing to chat %s", chatID)
 	return r.redis.Subscribe(ctx, chatID)
 }

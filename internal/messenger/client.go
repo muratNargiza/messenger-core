@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
 	"github.com/gliedabrennung/messenger-core/internal/pkg/authctx"
@@ -53,7 +53,7 @@ func (c *Client) readPump() {
 
 	c.conn.SetReadLimit(maxMessageSize)
 	if err := c.conn.SetReadDeadline(c.nextReadDeadline()); err != nil {
-		hlog.Errorf("ws: set read deadline: %v", err)
+		logger.Errorf("ws: set read deadline: %v", err)
 		return
 	}
 	c.conn.SetPongHandler(func(string) error {
@@ -64,14 +64,14 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				hlog.Errorf("ws: read error: %v", err)
+				logger.Errorf("ws: read error: %v", err)
 			}
 			break
 		}
 
 		var inc incomingMessage
 		if err := json.Unmarshal(message, &inc); err != nil {
-			hlog.Errorf("ws: invalid json: %v", err)
+			logger.Errorf("ws: invalid json: %v", err)
 			continue
 		}
 
@@ -82,7 +82,7 @@ func (c *Client) readPump() {
 
 		toID, err := inc.To.Int64()
 		if err != nil {
-			hlog.Errorf("ws: invalid 'to' ID: %v", err)
+			logger.Errorf("ws: invalid 'to' ID: %v", err)
 			continue
 		}
 
@@ -104,7 +104,7 @@ func (c *Client) readPump() {
 				Content: inc.Message,
 			}
 			if err := c.hub.MsgRepo.Save(context.Background(), repoMsg); err != nil {
-				hlog.Errorf("ws: save message: %v", err)
+				logger.Errorf("ws: save message: %v", err)
 			}
 		}
 
@@ -130,7 +130,7 @@ func (c *Client) writePump() {
 				return
 			}
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				hlog.Errorf("ws: set write deadline: %v", err)
+				logger.Errorf("ws: set write deadline: %v", err)
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
@@ -138,7 +138,7 @@ func (c *Client) writePump() {
 			}
 		case <-ticker.C:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				hlog.Errorf("ws: set write deadline (ping): %v", err)
+				logger.Errorf("ws: set write deadline (ping): %v", err)
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -196,7 +196,7 @@ func ServeWs(hub *Hub, upgrader websocket.HertzUpgrader) app.HandlerFunc {
 		})
 
 		if err != nil {
-			hlog.CtxErrorf(ctx, "ws: upgrade error: %v", err)
+			logger.CtxErrorf(ctx, "ws: upgrade error: %v", err)
 			api.ErrorResponse(c, http.StatusInternalServerError,
 				"WEBSOCKET_UPGRADE_FAILED", "could not upgrade to websocket connection", nil)
 		}

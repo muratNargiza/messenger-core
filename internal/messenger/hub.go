@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/domain"
 )
 
@@ -100,7 +100,7 @@ func (h *Hub) Run(ctx context.Context) {
 		}(s)
 	}
 	wg.Wait()
-	hlog.Info("hub: shutdown complete")
+	logger.Info("hub: shutdown complete")
 }
 
 func (s *shard) run(ctx context.Context) {
@@ -126,7 +126,7 @@ func (s *shard) run(ctx context.Context) {
 			if client, ok := s.clients[msg.To]; ok {
 				msgBytes, err := json.Marshal(msg)
 				if err != nil {
-					hlog.Errorf("hub: marshal direct message: %v", err)
+					logger.Errorf("hub: marshal direct message: %v", err)
 					continue
 				}
 				select {

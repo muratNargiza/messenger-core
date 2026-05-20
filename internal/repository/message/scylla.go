@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/gocql/gocql"
 )
@@ -19,7 +19,7 @@ func InitSchema(ctx context.Context, hosts []string, keyspace string) error {
 	cluster.Timeout = 5 * time.Second
 	session, err := cluster.CreateSession()
 	if err != nil {
-		hlog.CtxErrorf(ctx, "failed to connect to scylla cluster for schema init: %v", err)
+		logger.CtxErrorf(ctx, "failed to connect to scylla cluster for schema init: %v", err)
 		return fmt.Errorf("scylla schema init: connect cluster: %w", err)
 	}
 	defer session.Close()
@@ -28,7 +28,7 @@ func InitSchema(ctx context.Context, hosts []string, keyspace string) error {
 		CREATE KEYSPACE IF NOT EXISTS %s
 		WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`, keyspace)
 	if err := session.Query(createKeyspaceQuery).WithContext(ctx).Exec(); err != nil {
-		hlog.CtxErrorf(ctx, "failed to create keyspace %s: %v", keyspace, err)
+		logger.CtxErrorf(ctx, "failed to create keyspace %s: %v", keyspace, err)
 		return fmt.Errorf("scylla schema init: create keyspace: %w", err)
 	}
 
@@ -43,11 +43,11 @@ func InitSchema(ctx context.Context, hosts []string, keyspace string) error {
 			PRIMARY KEY ((chat_id), message_id)
 		) WITH CLUSTERING ORDER BY (message_id DESC)`, keyspace)
 	if err := session.Query(createTableQuery).WithContext(ctx).Exec(); err != nil {
-		hlog.CtxErrorf(ctx, "failed to create direct_messages table in %s: %v", keyspace, err)
+		logger.CtxErrorf(ctx, "failed to create direct_messages table in %s: %v", keyspace, err)
 		return fmt.Errorf("scylla schema init: create table: %w", err)
 	}
 
-	hlog.CtxInfof(ctx, "scylla schema initialized successfully in keyspace %s", keyspace)
+	logger.CtxInfof(ctx, "scylla schema initialized successfully in keyspace %s", keyspace)
 	return nil
 }
 
@@ -68,11 +68,11 @@ func (s *ScyllaStorage) Save(ctx context.Context, msg *entity.Message) error {
 	).WithContext(ctx).Exec()
 
 	if err != nil {
-		hlog.CtxErrorf(ctx, "scylla save failed for chat %s: %v", msg.ChatID, err)
+		logger.CtxErrorf(ctx, "scylla save failed for chat %s: %v", msg.ChatID, err)
 		return fmt.Errorf("scylla: save message: %w", err)
 	}
 
-	hlog.CtxInfof(ctx, "scylla saved message %s for chat %s", msg.MessageID, msg.ChatID)
+	logger.CtxInfof(ctx, "scylla saved message %s for chat %s", msg.MessageID, msg.ChatID)
 	return nil
 }
 
@@ -90,7 +90,7 @@ func (s *ScyllaStorage) GetHistory(ctx context.Context, chatID string, limit int
 	} else {
 		cursorUUID, err := gocql.ParseUUID(cursor)
 		if err != nil {
-			hlog.CtxErrorf(ctx, "scylla parse cursor %s failed: %v", cursor, err)
+			logger.CtxErrorf(ctx, "scylla parse cursor %s failed: %v", cursor, err)
 			return nil, "", fmt.Errorf("scylla: parse cursor: %w", err)
 		}
 		query = s.session.Query(`
@@ -126,7 +126,7 @@ func (s *ScyllaStorage) GetHistory(ctx context.Context, chatID string, limit int
 	}
 
 	if err := iter.Close(); err != nil {
-		hlog.CtxErrorf(ctx, "scylla get history failed for chat %s: %v", chatID, err)
+		logger.CtxErrorf(ctx, "scylla get history failed for chat %s: %v", chatID, err)
 		return nil, "", fmt.Errorf("scylla: get chat history: %w", err)
 	}
 
@@ -136,6 +136,6 @@ func (s *ScyllaStorage) GetHistory(ctx context.Context, chatID string, limit int
 		messages = messages[:limit]
 	}
 
-	hlog.CtxInfof(ctx, "scylla retrieved %d messages for chat %s", len(messages), chatID)
+	logger.CtxInfof(ctx, "scylla retrieved %d messages for chat %s", len(messages), chatID)
 	return messages, nextCursor, nil
 }

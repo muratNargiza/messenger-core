@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/apperr"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
@@ -59,7 +59,7 @@ func (h *AuthHandler) Register(ctx context.Context, c *app.RequestContext) {
 				"USER_EXISTS", "username is already taken", nil)
 			return
 		}
-		hlog.CtxErrorf(ctx, "register failed: %v", err)
+		logger.CtxErrorf(ctx, "register failed: %v", err)
 		api.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR", "failed to register user", nil)
 		return
@@ -83,7 +83,7 @@ func (h *AuthHandler) Login(ctx context.Context, c *app.RequestContext) {
 				"INVALID_CREDENTIALS", "invalid username or password", nil)
 			return
 		}
-		hlog.CtxErrorf(ctx, "login failed: %v", err)
+		logger.CtxErrorf(ctx, "login failed: %v", err)
 		api.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR", "failed to login", nil)
 		return
