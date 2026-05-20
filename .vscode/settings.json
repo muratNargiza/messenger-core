@@ -1,6 +1,0 @@
-{
-    "go.goroot": "/usr/lib/go",
-    "go.alternateTools": {
-        "go": "/usr/bin/go"
-    }
-}
