@@ -7,18 +7,13 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/gliedabrennung/messenger-core/internal/controller/http/middleware"
-	"github.com/gliedabrennung/messenger-core/internal/messenger"
 	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
 )
 
-// Deps holds all external dependencies for the HTTP router.
 type Deps struct {
 	Auth      AuthService
-	Hub       *messenger.Hub
+	WsHandler app.HandlerFunc
 	JWTSecret string
-	// AllowedOrigins is the list of allowed WebSocket origins.
-	// Use ["*"] to allow all origins (development only).
-	AllowedOrigins []string
 }
 
 func SetupRouter(h *server.Hertz, deps Deps) {
@@ -44,6 +39,5 @@ func SetupRouter(h *server.Hertz, deps Deps) {
 	auth.POST("/register", authHandler.Register)
 	auth.POST("/login", authHandler.Login)
 
-	upgrader := messenger.NewUpgrader(deps.AllowedOrigins)
-	h.GET("/ws", middleware.JWTAuth(deps.JWTSecret), messenger.ServeWs(deps.Hub, upgrader))
+	h.GET("/ws", middleware.JWTAuth(deps.JWTSecret), deps.WsHandler)
 }

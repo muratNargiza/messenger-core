@@ -7,7 +7,6 @@ import (
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 )
 
-// MockUserRepo is a shared in-memory mock for UserRepository.
 type MockUserRepo struct {
 	Users map[string]*entity.User
 }

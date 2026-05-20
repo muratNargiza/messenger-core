@@ -65,4 +65,3 @@ func extractBearerToken(header string) (string, bool) {
 	trimmed := strings.TrimSpace(header)
 	return trimmed, trimmed != ""
 }
-

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
@@ -13,7 +12,6 @@ import (
 	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
 )
 
-// AuthService is the consumer-side interface for auth operations.
 type AuthService interface {
 	Register(ctx context.Context, username, password string) (*entity.User, error)
 	Login(ctx context.Context, username, password string) (*entity.User, string, error)
@@ -49,15 +47,13 @@ func (h *AuthHandler) Register(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	username, err := sanitizeAndValidate(req.Username, req.Password)
+	user, err := h.auth.Register(ctx, req.Username, req.Password)
 	if err != nil {
-		api.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_CREDENTIALS", err.Error(), nil)
-		return
-	}
-
-	user, err := h.auth.Register(ctx, username, req.Password)
-	if err != nil {
+		if errors.Is(err, apperr.ErrInvalidUsername) || errors.Is(err, apperr.ErrInvalidPassword) {
+			api.ErrorResponse(c, http.StatusBadRequest,
+				"INVALID_CREDENTIALS", err.Error(), nil)
+			return
+		}
 		if errors.Is(err, apperr.ErrUserAlreadyExists) {
 			api.ErrorResponse(c, http.StatusConflict,
 				"USER_EXISTS", "username is already taken", nil)
@@ -94,17 +90,4 @@ func (h *AuthHandler) Login(ctx context.Context, c *app.RequestContext) {
 	}
 
 	c.JSON(http.StatusOK, loginResponse{Token: token, User: user})
-}
-
-// sanitizeAndValidate trims the username and validates both credentials.
-// Returns the sanitized username or an error.
-func sanitizeAndValidate(username, password string) (string, error) {
-	username = strings.TrimSpace(username)
-	if len(username) < 3 || len(username) > 24 {
-		return "", errors.New("username must be between 3 and 24 characters")
-	}
-	if len(password) < 8 {
-		return "", errors.New("password must be at least 8 characters")
-	}
-	return username, nil
 }

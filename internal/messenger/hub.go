@@ -1,7 +1,6 @@
 package messenger
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/cloudwego/hertz/pkg/common/hlog"
@@ -12,6 +11,7 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	direct     chan DirectMessage
+	done       chan struct{}
 }
 
 type DirectMessage struct {
@@ -26,14 +26,18 @@ func NewHub() *Hub {
 		unregister: make(chan *Client),
 		direct:     make(chan DirectMessage),
 		clients:    make(map[int64]*Client),
+		done:       make(chan struct{}),
 	}
 }
 
-// Run processes hub events until ctx is cancelled. Must be called in a goroutine.
-func (h *Hub) Run(ctx context.Context) {
+func (h *Hub) Stop() {
+	close(h.done)
+}
+
+func (h *Hub) Run() {
 	for {
 		select {
-		case <-ctx.Done():
+		case <-h.done:
 			for id, client := range h.clients {
 				close(client.send)
 				delete(h.clients, id)

@@ -8,10 +8,10 @@ import (
 
 func TestSetAndGetUserID(t *testing.T) {
 	c := app.NewContext(16)
-	
+
 	id := int64(456)
 	SetUserID(c, id)
-	
+
 	gotID, ok := UserID(c)
 	if !ok {
 		t.Fatal("expected to find user ID in context")

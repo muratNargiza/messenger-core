@@ -1,18 +1,16 @@
 package messenger
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
 )
 
-func testHub(t *testing.T) (*Hub, context.CancelFunc) {
+func testHub(t *testing.T) (*Hub, func()) {
 	t.Helper()
 	h := NewHub()
-	ctx, cancel := context.WithCancel(context.Background())
-	go h.Run(ctx)
-	return h, cancel
+	go h.Run()
+	return h, h.Stop
 }
 
 func testClient(id int64) *Client {
@@ -46,7 +44,6 @@ func TestHub_Run_DirectMessage(t *testing.T) {
 		t.Fatal("message not delivered to client")
 	}
 
-	// Unregister
 	h.unregister <- c1
 	h.unregister <- c2
 	time.Sleep(50 * time.Millisecond)
@@ -91,7 +88,7 @@ func TestHub_DirectMessage_NonExistentClient(t *testing.T) {
 
 	msg := DirectMessage{From: 1, To: 999, Message: "hello"}
 	h.direct <- msg
-	// Should not panic or block
+
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -102,7 +99,7 @@ func TestHub_Unregister_NotFound(t *testing.T) {
 	c := testClient(1)
 	c.hub = h
 	h.unregister <- c
-	// Should not panic or block
+
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -114,7 +111,7 @@ func TestHub_Shutdown(t *testing.T) {
 	h.register <- c
 	time.Sleep(50 * time.Millisecond)
 
-	cancel() // trigger shutdown
+	cancel()
 	time.Sleep(100 * time.Millisecond)
 
 	select {

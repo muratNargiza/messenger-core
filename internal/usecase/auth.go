@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gliedabrennung/messenger-core/internal/apperr"
@@ -13,7 +14,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// UserRepository is defined on the consumer side per Uber Go Style Guide.
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
@@ -34,12 +34,12 @@ func NewAuthUseCase(repo UserRepository, jwtSecret string, jwtTTL time.Duration)
 }
 
 func (a *AuthUseCase) Register(ctx context.Context, username, password string) (*entity.User, error) {
-	existing, err := a.repo.GetByUsername(ctx, username)
-	if err == nil && existing != nil {
-		return nil, apperr.ErrUserAlreadyExists
+	username = strings.TrimSpace(username)
+	if len(username) < 3 || len(username) > 24 {
+		return nil, apperr.ErrInvalidUsername
 	}
-	if err != nil && !errors.Is(err, apperr.ErrUserNotFound) {
-		return nil, fmt.Errorf("register: check existing user: %w", err)
+	if len(password) < 8 {
+		return nil, apperr.ErrInvalidPassword
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -63,6 +63,7 @@ func (a *AuthUseCase) Register(ctx context.Context, username, password string) (
 }
 
 func (a *AuthUseCase) Login(ctx context.Context, username, password string) (*entity.User, string, error) {
+	username = strings.TrimSpace(username)
 	user, err := a.repo.GetByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, apperr.ErrUserNotFound) {

@@ -35,7 +35,10 @@ type incomingMessage struct {
 
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
+		select {
+		case c.hub.unregister <- c:
+		case <-c.hub.done:
+		}
 		<-c.done
 	}()
 
@@ -69,10 +72,15 @@ func (c *Client) readPump() {
 			continue
 		}
 
-		c.hub.direct <- DirectMessage{
+		msg := DirectMessage{
 			From:    c.id,
 			To:      toID,
 			Message: inc.Message,
+		}
+		select {
+		case c.hub.direct <- msg:
+		case <-c.hub.done:
+			return
 		}
 	}
 }
@@ -111,8 +119,6 @@ func (c *Client) writePump() {
 	}
 }
 
-// NewUpgrader creates a WebSocket upgrader with the given allowed origins.
-// If allowedOrigins is empty, all origins are rejected.
 func NewUpgrader(allowedOrigins []string) websocket.HertzUpgrader {
 	allowed := make(map[string]bool, len(allowedOrigins))
 	for _, o := range allowedOrigins {
@@ -134,8 +140,6 @@ func NewUpgrader(allowedOrigins []string) websocket.HertzUpgrader {
 	}
 }
 
-// ServeWs returns a handler that upgrades HTTP connections to WebSocket.
-// Hub and upgrader are injected as dependencies.
 func ServeWs(hub *Hub, upgrader websocket.HertzUpgrader) app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
 		userID, ok := authctx.UserID(c)
@@ -152,7 +156,13 @@ func ServeWs(hub *Hub, upgrader websocket.HertzUpgrader) app.HandlerFunc {
 				send: make(chan []byte, 256),
 				done: make(chan struct{}),
 			}
-			hub.register <- client
+
+			select {
+			case hub.register <- client:
+			case <-hub.done:
+				conn.Close()
+				return
+			}
 
 			go client.writePump()
 			client.readPump()
