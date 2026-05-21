@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/gocql/gocql"
 )
@@ -61,7 +61,7 @@ func (s *ScyllaStorage) Save(ctx context.Context, msg *entity.Message) error {
 	msg.CreatedAt = time.Now()
 
 	err := s.session.Query(`
-		INSERT INTO messenger.direct_messages
+		INSERT INTO ws.direct_messages
 		(chat_id, message_id, from_id, to_id, content, created_at)
 		VALUES (?, ?, ?, ?, ?, ?)`,
 		msg.ChatID, id, msg.FromID, msg.ToID, msg.Content, msg.CreatedAt,
@@ -82,7 +82,7 @@ func (s *ScyllaStorage) GetHistory(ctx context.Context, chatID string, limit int
 	if cursor == "" {
 		query = s.session.Query(`
 			SELECT chat_id, message_id, from_id, to_id, content, created_at
-			FROM messenger.direct_messages
+			FROM ws.direct_messages
 			WHERE chat_id = ?
 			ORDER BY message_id DESC
 			LIMIT ?`, chatID, limit+1,
@@ -95,7 +95,7 @@ func (s *ScyllaStorage) GetHistory(ctx context.Context, chatID string, limit int
 		}
 		query = s.session.Query(`
 			SELECT chat_id, message_id, from_id, to_id, content, created_at
-			FROM messenger.direct_messages
+			FROM ws.direct_messages
 			WHERE chat_id = ? AND message_id < ?
 			ORDER BY message_id DESC
 			LIMIT ?`, chatID, cursorUUID, limit+1,

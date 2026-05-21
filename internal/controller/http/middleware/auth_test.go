@@ -11,7 +11,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/config"
 	"github.com/cloudwego/hertz/pkg/common/ut"
 	"github.com/cloudwego/hertz/pkg/route"
-	"github.com/gliedabrennung/messenger-core/internal/pkg/authctx"
+	"github.com/gliedabrennung/messenger-core/internal/common/authctx"
 	"github.com/golang-jwt/jwt/v5"
 )
 

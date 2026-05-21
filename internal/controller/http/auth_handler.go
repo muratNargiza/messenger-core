@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"github.com/gliedabrennung/messenger-core/internal/apperr"
+	"github.com/gliedabrennung/messenger-core/internal/common/api"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
-	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
 )
 
 type AuthService interface {

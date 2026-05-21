@@ -6,8 +6,8 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"github.com/gliedabrennung/messenger-core/internal/common/api"
 	"github.com/gliedabrennung/messenger-core/internal/controller/http/middleware"
-	"github.com/gliedabrennung/messenger-core/internal/pkg/api"
 )
 
 type Deps struct {

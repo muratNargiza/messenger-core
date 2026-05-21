@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 	"github.com/gliedabrennung/messenger-core/internal/entity"
 	"github.com/redis/go-redis/v9"
 )

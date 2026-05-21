@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 )
 
 type Error struct {

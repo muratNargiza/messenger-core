@@ -1,11 +1,11 @@
-package messenger
+package ws
 
 import (
 	"context"
 	"encoding/json"
 	"sync"
 
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 	"github.com/gliedabrennung/messenger-core/internal/domain"
 )
 

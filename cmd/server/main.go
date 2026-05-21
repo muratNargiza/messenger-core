@@ -4,21 +4,22 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
+
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/gliedabrennung/messenger-core/internal/config"
 	"github.com/gliedabrennung/messenger-core/internal/controller/http"
 	"github.com/gliedabrennung/messenger-core/internal/controller/http/middleware"
 	"github.com/gliedabrennung/messenger-core/internal/domain"
-	"github.com/gliedabrennung/messenger-core/internal/messenger"
 	"github.com/gliedabrennung/messenger-core/internal/repository/message"
 	"github.com/gliedabrennung/messenger-core/internal/repository/postgres"
 	"github.com/gliedabrennung/messenger-core/internal/usecase"
+	"github.com/gliedabrennung/messenger-core/internal/ws"
 	"github.com/gocql/gocql"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 func main() {
@@ -28,6 +29,11 @@ func main() {
 }
 
 func run() error {
+	var (
+		msgRepo       domain.MessageRepository
+		scyllaSession *gocql.Session
+	)
+
 	cfg, err := config.LoadConfig(".env")
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
@@ -41,9 +47,8 @@ func run() error {
 	}
 	defer dbpool.Close()
 
-	var scyllaSession *gocql.Session
 	if err := message.InitSchema(ctx, cfg.ScyllaHosts, cfg.ScyllaKeyspace); err != nil {
-		logger.Warnf("warning: could not initialize scylla schema (skipping messages feature): %v", err)
+		logger.Warnf("warning: could not initialize scylla schema: %v", err)
 	} else {
 		cluster := gocql.NewCluster(cfg.ScyllaHosts...)
 		cluster.Keyspace = cfg.ScyllaKeyspace
@@ -63,13 +68,17 @@ func run() error {
 		Password: cfg.RedisPassword,
 	})
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		logger.Warnf("warning: could not connect to redis (skipping cache/pubsub): %v", err)
+		logger.Warnf("warning: could not connect to redis: %v", err)
 		rdb = nil
 	} else {
-		defer rdb.Close()
+		defer func() {
+			err = rdb.Close()
+			if err != nil {
+				logger.Warnf("warning: could not close redis connection: %v", err)
+			}
+		}()
 	}
 
-	var msgRepo domain.MessageRepository
 	if scyllaSession != nil && rdb != nil {
 		msgRepo = message.NewRepository(scyllaSession, rdb)
 	}
@@ -80,7 +89,7 @@ func run() error {
 	hubCtx, hubCancel := context.WithCancel(ctx)
 	defer hubCancel()
 
-	hub := messenger.NewHub(msgRepo)
+	hub := ws.NewHub(msgRepo)
 	go hub.Run(hubCtx)
 
 	h := server.Default(
@@ -93,8 +102,8 @@ func run() error {
 		hubCancel()
 	})
 
-	upgrader := messenger.NewUpgrader(cfg.AllowedOrigins)
-	wsHandler := messenger.ServeWs(hub, upgrader)
+	upgrader := ws.NewUpgrader(cfg.AllowedOrigins)
+	wsHandler := ws.ServeWs(hub, upgrader)
 	authMiddleware := middleware.JWTAuth(cfg.JWTSecret)
 
 	http.SetupRouter(h, http.Deps{

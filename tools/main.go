@@ -7,11 +7,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gliedabrennung/messenger-core/internal/pkg/logger"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gliedabrennung/messenger-core/internal/common/logger"
 
 	"github.com/gorilla/websocket"
 )

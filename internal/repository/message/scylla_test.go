@@ -16,12 +16,12 @@ func TestScyllaStorage_Integration(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	if err := InitSchema(ctx, []string{scyllaHosts}, "messenger"); err != nil {
+	if err := InitSchema(ctx, []string{scyllaHosts}, "ws"); err != nil {
 		t.Fatalf("could not initialize schema: %v", err)
 	}
 
 	cluster := gocql.NewCluster(scyllaHosts)
-	cluster.Keyspace = "messenger"
+	cluster.Keyspace = "ws"
 	session, err := cluster.CreateSession()
 	if err != nil {
 		t.Fatalf("could not connect to scylla: %v", err)
